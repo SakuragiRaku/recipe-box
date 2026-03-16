@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>レシピボックス | レシピ管理 & 材料逆引き</title>
+  <meta name="description" content="お気に入りレシピの管理と材料からの逆引き検索、買い物リスト自動生成ができるアプリ。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- ヘッダー -->
+    <header class="header">
+      <div class="header-left">
+        <span class="logo">🍳</span>
+        <h1 class="app-title">レシピボックス</h1>
+      </div>
+      <div class="header-right">
+        <button class="theme-btn" id="theme-btn" title="テーマ切替">🌙</button>
+      </div>
+    </header>
+
+    <!-- ナビゲーション -->
+    <nav class="nav" id="nav">
+      <button class="nav-btn active" data-page="recipes">📖 レシピ</button>
+      <button class="nav-btn" data-page="search">🔍 材料から探す</button>
+      <button class="nav-btn" data-page="shopping">🛒 買い物リスト</button>
+    </nav>
+
+    <!-- メインコンテンツ -->
+    <main class="main">
+
+      <!-- レシピ一覧ページ -->
+      <section class="page active" id="page-recipes">
+        <!-- カテゴリタブ -->
+        <div class="category-tabs" id="category-tabs">
+          <button class="cat-tab active" data-cat="all">すべて</button>
+          <button class="cat-tab" data-cat="main">🍖 主菜</button>
+          <button class="cat-tab" data-cat="side">🥗 副菜</button>
+          <button class="cat-tab" data-cat="soup">🍲 汁物</button>
+          <button class="cat-tab" data-cat="rice">🍚 ごはん</button>
+          <button class="cat-tab" data-cat="noodle">🍜 麺類</button>
+          <button class="cat-tab" data-cat="salad">🥬 サラダ</button>
+          <button class="cat-tab" data-cat="dessert">🍰 デザート</button>
+          <button class="cat-tab" data-cat="other">📝 その他</button>
+        </div>
+        <!-- 検索バー -->
+        <div class="search-bar">
+          <input type="text" class="search-input" id="recipe-search" placeholder="レシピ名で検索..." />
+        </div>
+        <!-- レシピカードグリッド -->
+        <div class="recipe-grid" id="recipe-grid"></div>
+        <!-- 空状態 -->
+        <div class="empty-state hidden" id="empty-recipes">
+          <span class="empty-icon">📦</span>
+          <p class="empty-text">レシピがまだありません</p>
+          <p class="empty-sub">下のボタンから最初のレシピを追加しましょう！</p>
+        </div>
+        <!-- FAB -->
+        <button class="fab" id="add-recipe-btn" title="レシピ追加">＋</button>
+      </section>
+
+      <!-- 材料から探すページ -->
+      <section class="page" id="page-search">
+        <div class="search-section">
+          <h2 class="section-title">🔍 材料から探す</h2>
+          <p class="section-desc">冷蔵庫にある材料を入力して、作れるレシピを探しましょう</p>
+          <div class="ingredient-input-area">
+            <div class="ingredient-tags" id="ingredient-tags"></div>
+            <input type="text" class="ingredient-input" id="ingredient-input" placeholder="材料を入力してEnter..." />
+          </div>
+          <button class="search-btn" id="ingredient-search-btn">レシピを検索</button>
+        </div>
+        <div class="search-results" id="search-results"></div>
+        <div class="empty-state hidden" id="empty-search">
+          <span class="empty-icon">🥕</span>
+          <p class="empty-text">材料を入力して検索してください</p>
+        </div>
+      </section>
+
+      <!-- 買い物リストページ -->
+      <section class="page" id="page-shopping">
+        <h2 class="section-title">🛒 買い物リスト</h2>
+        <p class="section-desc">作りたいレシピを選ぶと、必要な材料を自動でリストにまとめます</p>
+        <!-- レシピ選択 -->
+        <div class="shopping-recipe-select" id="shopping-recipe-select"></div>
+        <!-- 集計された材料リスト -->
+        <div class="shopping-list" id="shopping-list"></div>
+        <div class="shopping-actions hidden" id="shopping-actions">
+          <button class="clear-shopping-btn" id="clear-shopping-btn">🗑 リストをクリア</button>
+        </div>
+        <div class="empty-state hidden" id="empty-shopping">
+          <span class="empty-icon">🛒</span>
+          <p class="empty-text">レシピを選んで買い物リストを作りましょう</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- レシピ詳細モーダル -->
+    <div class="modal-overlay hidden" id="detail-modal">
+      <div class="modal detail-modal">
+        <div class="detail-header" id="detail-header"></div>
+        <div class="detail-body" id="detail-body"></div>
+        <div class="detail-actions">
+          <button class="modal-btn edit" id="detail-edit-btn">✏️ 編集</button>
+          <button class="modal-btn delete" id="detail-delete-btn">🗑 削除</button>
+          <button class="modal-btn close" id="detail-close-btn">閉じる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- レシピ登録/編集モーダル -->
+    <div class="modal-overlay hidden" id="edit-modal">
+      <div class="modal edit-modal">
+        <h2 id="edit-modal-title">🍳 レシピ追加</h2>
+        <div class="form-group">
+          <label>料理名</label>
+          <input type="text" class="form-input" id="form-name" placeholder="例: 肉じゃが" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>カテゴリ</label>
+            <select class="form-select" id="form-category">
+              <option value="main">🍖 主菜</option>
+              <option value="side">🥗 副菜</option>
+              <option value="soup">🍲 汁物</option>
+              <option value="rice">🍚 ごはん</option>
+              <option value="noodle">🍜 麺類</option>
+              <option value="salad">🥬 サラダ</option>
+              <option value="dessert">🍰 デザート</option>
+              <option value="other">📝 その他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>調理時間</label>
+            <select class="form-select" id="form-time">
+              <option value="5">5分</option>
+              <option value="10">10分</option>
+              <option value="15" selected>15分</option>
+              <option value="20">20分</option>
+              <option value="30">30分</option>
+              <option value="45">45分</option>
+              <option value="60">60分</option>
+              <option value="90">60分以上</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>難易度</label>
+          <div class="difficulty-pills" id="form-difficulty">
+            <button class="diff-pill active" data-diff="easy">かんたん</button>
+            <button class="diff-pill" data-diff="normal">ふつう</button>
+            <button class="diff-pill" data-diff="hard">こだわり</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>材料</label>
+          <div class="ingredients-form" id="ingredients-form">
+            <div class="ingredient-row">
+              <input type="text" class="form-input ing-name" placeholder="材料名" />
+              <input type="text" class="form-input ing-amount" placeholder="分量" />
+              <button class="row-remove-btn">✕</button>
+            </div>
+          </div>
+          <button class="add-row-btn" id="add-ingredient-btn">＋ 材料を追加</button>
+        </div>
+        <div class="form-group">
+          <label>作り方</label>
+          <div class="steps-form" id="steps-form">
+            <div class="step-row">
+              <span class="step-num">1.</span>
+              <input type="text" class="form-input step-input" placeholder="手順を入力" />
+              <button class="row-remove-btn">✕</button>
+            </div>
+          </div>
+          <button class="add-row-btn" id="add-step-btn">＋ 手順を追加</button>
+        </div>
+        <div class="form-group">
+          <label>ひとことメモ</label>
+          <textarea class="form-textarea" id="form-memo" placeholder="コツやポイントなど..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" id="edit-cancel-btn">キャンセル</button>
+          <button class="modal-btn save" id="edit-save-btn">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
